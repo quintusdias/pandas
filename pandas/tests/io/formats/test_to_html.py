@@ -3,6 +3,7 @@
 import re
 from textwrap import dedent
 from datetime import datetime
+from xml.etree import ElementTree as ET
 from distutils.version import LooseVersion
 
 import pytest
@@ -23,6 +24,13 @@ except (ImportError, AttributeError):
 
 
 class TestToHTML(object):
+
+    def test_to_html_ignores_na_rep_when_float_format_set(self):
+        df = pd.DataFrame([['A',1.2225],['A',]], columns=['Group','Data'])
+        html = df.to_html(na_rep="Ted", float_format='{0:.2f}'.format)
+        doc = ET.fromstring(html)
+        elt = doc.findall('.//tbody/tr[2]/td[2]')[0]
+        assert elt.text == 'Ted'
 
     def test_to_html_with_col_space(self):
         def check_with_width(df, col_space):
