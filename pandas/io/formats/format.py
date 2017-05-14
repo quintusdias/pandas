@@ -1882,7 +1882,10 @@ class FloatArrayFormatter(GenericArrayFormatter):
         the parameters given at initalisation, as a numpy array
         """
 
-        if self.formatter is not None:
+        # If there a formatter is set, we can only apply it if there is no
+        # null representation.
+        # import pdb; pdb.set_trace()
+        if self.formatter is not None and self.na_rep in (None, 'NaN'):
             return np.array([self.formatter(x) for x in self.values])
 
         if self.fixed_width:
@@ -1949,7 +1952,9 @@ class FloatArrayFormatter(GenericArrayFormatter):
 
     def _format_strings(self):
         # shortcut
-        if self.formatter is not None:
+        # If there a formatter is set, we can only apply it if there is no
+        # null representation.
+        if self.formatter is not None and self.na_rep in (None, 'NaN'):
             return [self.formatter(x) for x in self.values]
 
         return list(self.get_result_as_array())
