@@ -26,6 +26,8 @@ except (ImportError, AttributeError):
 class TestToHTML(object):
 
     def test_to_html_ignores_na_rep_when_float_format_set(self):
+        # GH13828
+        # na_rep should not be ignored when float_format also specified
         df = pd.DataFrame([['A',1.2225],['A',]], columns=['Group','Data'])
         html = df.to_html(na_rep="Ted", float_format='{0:.2f}'.format)
         doc = ET.fromstring(html)
