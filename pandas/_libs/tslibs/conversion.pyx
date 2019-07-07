@@ -1,3 +1,14 @@
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
 import cython
 
 import numpy as np
@@ -283,33 +294,51 @@ cdef convert_to_tsobject(object ts, object tz, object unit,
     cdef:
         _TSObject obj
 
+    logger.info('starting...')
+    logger.info(f'type is {type(tz)}, tz = {tz}')
     if tz is not None:
+        logger.info('tz is not none...')
         tz = maybe_get_tz(tz)
+    logger.info(f'type is {type(tz)}, tz = {tz}')
 
     obj = _TSObject()
+    logger.info('after _TSObject...')
 
     if isinstance(ts, str):
+        logger.info('ts is str...')
         return convert_str_to_tsobject(ts, tz, unit, dayfirst, yearfirst)
+    logger.info('ts is NOT str...')
 
     if ts is None or ts is NaT:
+        logger.info('ts is None or NaT...')
         obj.value = NPY_NAT
     elif is_datetime64_object(ts):
+        logger.info('ts is datetime64...')
         obj.value = get_datetime64_nanos(ts)
         if obj.value != NPY_NAT:
             dt64_to_dtstruct(obj.value, &obj.dts)
     elif is_integer_object(ts):
+        logger.info('ts is integer object...')
         try:
             ts = <int64_t>ts
         except OverflowError:
             # GH#26651 re-raise as OutOfBoundsDatetime
+            logger.info('overflow error')
             raise OutOfBoundsDatetime(ts)
         if ts == NPY_NAT:
+            logger.info('NPY_NAT')
             obj.value = NPY_NAT
         else:
+            logger.info('Not NPY_NAT')
+            logger.info(f"unit = {unit}")
+            logger.info(f"ts = {ts}")
             ts = ts * cast_from_unit(None, unit)
+            logger.info(f"ts = {ts}")
             obj.value = ts
             dt64_to_dtstruct(ts, &obj.dts)
+            logger.info(f"obj.dts= {obj.dts}")
     elif is_float_object(ts):
+        logger.info('ts is a float')
         if ts != ts or ts == NPY_NAT:
             obj.value = NPY_NAT
         else:
@@ -330,7 +359,11 @@ cdef convert_to_tsobject(object ts, object tz, object unit,
                         'Timestamp'.format(ts, type(ts)))
 
     if tz is not None:
+        logger.info('localizing ...')
+        logger.info(f'type is {type(tz)}')
+        logger.info(f'tz is {tz}')
         localize_tso(obj, tz)
+        logger.info('done localizing ...')
 
     if obj.value != NPY_NAT:
         # check_overflows needs to run after localize_tso
@@ -579,6 +612,7 @@ cdef inline void localize_tso(_TSObject obj, tzinfo tz):
         str typ
 
     assert obj.tzinfo is None
+    logger.info('inside localize_tso...')
 
     if is_utc(tz):
         pass
