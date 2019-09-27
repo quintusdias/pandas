@@ -4,13 +4,11 @@ from datetime import timedelta
 from distutils.version import LooseVersion
 from io import BytesIO
 import os
-import pathlib
 import re
 import tempfile
 from warnings import catch_warnings, simplefilter
 
 import numpy as np
-import tables as tb
 import pytest
 
 from pandas.compat import PY36, is_platform_little_endian, is_platform_windows
@@ -4846,29 +4844,20 @@ class TestHDFStore(Base):
             with pytest.raises(NotImplementedError, match="Saving a MultiIndex"):
                 df.to_hdf(path, "df")
 
-    def test_created_by_pb_read_with_where(self):
+    def test_created_by_pb_read_with_where(self, datapath):
         # GH 26973
+        data = {
+            'size': np.int16([0, 1]),
+            'age': np.int32([0, 2]),
+            'weight': np.uint64([0, 3])
+        }
+        expected = pd.DataFrame(data)
 
-        # write with pytables
-        arr = np.zeros(2, dtype={'names':('size', 'age', 'weight'),
-                                 'formats':('i2', 'i4', 'u8')})
-        arr[1] = (1, 2, 3)
-        with ensure_clean_path('where_i4.h5') as path:
-
-            fileh = tb.open_file(path, mode='w')
-            # table = fileh.create_table(fileh.root, 'mytable', description=arr.dtype)
-            filters = tb.Filters(complevel=9, complib='blosc', fletcher32=True)
-            table = fileh.create_table(fileh.root, 'mytable', description=arr.dtype, filters=filters)
-            table.append(arr)
-            fileh.close()
-
-            with pd.HDFStore(path) as store:
-                df = store.select('mytable', where='age=2')
-
-            # read with pandas (without where)
-            s = pd.HDFStore(filename, mode='r')
-            df = s.select('mytable')
-            s.close()
+        with ensure_clean_store(
+            datapath("io", "data", "gh26973.h5"), mode="r"
+        ) as store:
+            actual = store.select('mytable', where='age=2')
+            assert_frame_equal(result, expected)
 
 
 class TestHDFComplexValues(Base):
