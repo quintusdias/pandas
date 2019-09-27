@@ -4847,16 +4847,16 @@ class TestHDFStore(Base):
     def test_created_by_pb_read_with_where(self, datapath):
         # GH 26973
         data = {
-            'size': np.int16([0, 1]),
-            'age': np.int32([0, 2]),
-            'weight': np.uint64([0, 3])
+            'size': np.int16([1]),
+            'age': np.int32([2]),
+            'weight': np.uint64([3])
         }
         expected = pd.DataFrame(data)
 
         with ensure_clean_store(
             datapath("io", "data", "gh26973.h5"), mode="r"
         ) as store:
-            actual = store.select('mytable', where='age=2')
+            actual = store.select('mytable', where='age==2')
             assert_frame_equal(result, expected)
 
 
