@@ -4,6 +4,7 @@ from datetime import timedelta
 from distutils.version import LooseVersion
 from io import BytesIO
 import os
+import pathlib
 import re
 import tempfile
 from warnings import catch_warnings, simplefilter
