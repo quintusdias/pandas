@@ -4,7 +4,6 @@ from datetime import timedelta
 from distutils.version import LooseVersion
 from io import BytesIO
 import os
-import pathlib
 import re
 import tempfile
 from warnings import catch_warnings, simplefilter
@@ -4853,27 +4852,22 @@ class TestHDFStore(Base):
         arr = np.zeros(2, dtype={'names':('size', 'age', 'weight'),
                                  'formats':('i2', 'i4', 'u8')})
         arr[1] = (1, 2, 3)
-        filename = 'myfile2.h5'
-        p = pathlib.Path(filename)
-        if p.exists():
-            p.unlink()
+        with ensure_clean_path('where_i4.h5') as path:
 
-        fileh = tb.open_file(filename, mode='w')
-        # table = fileh.create_table(fileh.root, 'mytable', description=arr.dtype)
-        filters = tb.Filters(complevel=9, complib='blosc', fletcher32=True)
-        table = fileh.create_table(fileh.root, 'mytable', description=arr.dtype, filters=filters)
-        table.append(arr)
-        fileh.close()
+            fileh = tb.open_file(path, mode='w')
+            # table = fileh.create_table(fileh.root, 'mytable', description=arr.dtype)
+            filters = tb.Filters(complevel=9, complib='blosc', fletcher32=True)
+            table = fileh.create_table(fileh.root, 'mytable', description=arr.dtype, filters=filters)
+            table.append(arr)
+            fileh.close()
 
-        # read with pandas (with where)
-        s = pd.HDFStore(filename, mode='r')
-        s.select('mytable', where='age=2')
-        s.close()
+            with pd.HDFStore(path) as store:
+                df = store.select('mytable', where='age=2')
 
-        # read with pandas (without where)
-        s = pd.HDFStore(filename, mode='r')
-        df = s.select('mytable')
-        s.close()
+            # read with pandas (without where)
+            s = pd.HDFStore(filename, mode='r')
+            df = s.select('mytable')
+            s.close()
 
 
 class TestHDFComplexValues(Base):
